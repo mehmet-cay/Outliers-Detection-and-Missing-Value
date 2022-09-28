@@ -1,0 +1,155 @@
+---
+title: "Detection_0f_Outliers"
+author: "Mehmet ÇAY"
+date: '2022-08-23'
+output: 
+  html_document: 
+    toc: yes
+    highlight: zenburn
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Detection Of Outliers
+
+Outliers mean there are variables which are out of our data. Simply they are breaking our data, normally they should not be but some reasons they are exists. In order to set more correct model we should remove outliers. There are many methods to detect outliers.
+
+## According to Distance from Mean
+
+Finds value with largest difference between it and sample mean, which can be an outlier.
+
+```{r}
+library(outliers)
+hist(airquality$Ozone)
+
+outlier(airquality$Ozone)
+```
+
+## Outliers According to Z-Distribution
+
+"z" calculates normal scores (differences between each value and the mean divided by sd).
+
+```{r}
+library(outliers)
+
+outliers <- scores(na.omit(airquality$Ozone),type="z",prob= 0.95)
+head(outliers) # it is true-false vector
+indexs <- which(outliers==TRUE)
+head(indexs) # it gives which indexs we are searching
+outs <- na.omit(airquality$Ozone)[indexs]
+outs 
+```
+These are outliers. Let's check from graph.
+```{r}
+par(mfrow=c(2,1))
+hist(airquality$Ozone) # this with outliers
+hist(na.omit(airquality$Ozone)[-indexs]) # without outliers
+```
+
+## Outliers According to T-Distribution
+
+"t" calculates t-Student scores (transformed by $(z*\sqrt{(n-2)}/ \sqrt{(z-1-t^2)}$ formula
+
+```{r}
+outliers2 <- scores(na.omit(airquality$Ozone) , type = "t" , prob = 0.95)
+ids <- which(outliers2  == TRUE)
+na.omit(airquality$Ozone)[ids]
+```
+Almost same values.
+
+## Outliers According to Chi-Square Method
+
+"chisq" gives chi-squared scores (squares of differences between values and mean divided by variance
+
+```{r}
+outliers3 <- scores(na.omit(airquality$Ozone) , type = "chisq" , prob = 0.95)
+ids2 <- which(outliers3  == TRUE)
+na.omit(airquality$Ozone)[ids2]
+```
+Quite different from previous methods. But it also gives outliers.
+
+## Outliers According to IQR Method
+
+For the "iqr" type, all values lower than first and greater than third quartile is considered, and difference between them and nearest quartile divided by IQR are calculated.
+```{r}
+outliers4 <- scores(na.omit(airquality$Ozone) , type = "iqr" , prob = 0.95)
+ids3 <- which(outliers4  == TRUE)
+na.omit(airquality$Ozone)[ids3]
+```
+It did not find any outliers.
+
+## Outliers According to Median Method
+
+"mad" gives differences between each value and median, divided by median absolute deviation.
+
+```{r}
+outliers5 <- scores(na.omit(airquality$Ozone) , type = "mad" , prob = 0.95)
+ids4 <- which(outliers5  == TRUE)
+na.omit(airquality$Ozone)[ids4]
+```
+ It finds a lot.
+ 
+## Mahalanobis Distance
+ 
+Basically method draws a ellipse with using some properties of data. It uses mean and covariance of data to draw ellipse. After drawing, variables which are out of ellipse called outliers.
+```{r}
+library(ggplot2) # to illustrate graphs
+library(car) # to calculate mahalanobis distance
+
+figure <- ggplot(airquality , aes(x = Ozone , y  = Temp)) + 
+          geom_point(size = 2) + 
+          xlab("Ozone Values") + ylab("Temperature Values")
+
+figure
+
+
+
+```
+
+That is our data.
+```{r}
+X <- na.omit(airquality[c("Ozone" , "Temp")]) # data without NA
+
+air.center <- colMeans(X)
+air.center
+air.cov <- cov(X)
+air.cov  
+radius <- sqrt(qchisq(0.80 , df = 2 ))
+radius
+```
+We obtained our necessary values and removed NA values.
+
+```{r}
+
+ellipse <- ellipse(center = air.center , shape = air.cov , rad = radius , 
+        segments = 100 , draw = FALSE)
+head(ellipse)
+ellipse <- as.data.frame(ellipse)
+colnames(ellipse) <- colnames(X)
+
+figure <- figure + geom_polygon(data = ellipse , color = "orange" , fill = "orange" , 
+                   alpha = 0.3) + 
+      geom_point(aes(x = air.center[1] , y = air.center[2]) , 
+                 size = 5 , color = "blue")
+
+figure
+
+```
+We obtained Mahalonbis distances. Let's do it via formula.
+
+```{r}
+dist <- mahalanobis(X , center = air.center , cov = air.cov)
+head(dist)
+
+cutoff <- qchisq(p = 0.95 , df = 2)
+
+ids <- which(dist > cutoff)
+
+X[ids ,]
+
+```
+ 
+ 
+Note: There are many other methods which detect outliers. For instance, Cook's Distance,  Isolation Forest, ODIN, or geometric models etc. In some points , in  regression models we are going to use other methods. That is all now. If you have any further interest, you can check the internet.

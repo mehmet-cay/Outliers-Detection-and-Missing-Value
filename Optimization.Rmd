@@ -1,0 +1,43 @@
+---
+title: "Min-Max-Optimization"
+author: "Mehmet ÇAY"
+date: '2022-08-23'
+output: 
+  html_document: 
+    toc: yes
+    highlight: zenburn
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Data Optimization
+
+Numbers in our data could be very big. In order to compute easily, we should do some optimization to our data.
+
+## Min-Max Optimization
+
+What we do is substracting min elements of our data from each element, then we need to divide each result to differences between max element and minimum element.
+Here is the formula: $(x-min(x))/(max(x)-min(x))$
+
+```{r}
+minMaxNorm <- function(x){
+  return((x - min(x)) / (max(x) - min(x)))
+}
+
+minMaxNorm(iris$Sepal.Length)
+```
+as it can be seen, all variables squeezed between 0 and 1
+
+## Scaling
+Our formula is $(x - \hat{x})/s)$, which
+$x$ :our data, 
+$\hat{x}$: mean of data,
+$s$: standard deviation.
+
+```{r}
+scaling <- scale(iris$Sepal.Length,center = T,scale = T)
+head(scaling)
+```
+
